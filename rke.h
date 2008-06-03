@@ -17,7 +17,7 @@
    Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-
+#include <stdlib.h>
 
 typedef struct struct_rke_variables
   {
@@ -38,7 +38,6 @@ typedef struct struct_rke_variables
     int rejected_steps;		/* Accumulated number of rejected steps */
   }
 *rke_variables;
-
 
 extern rke_variables rke_init (int, int (*) ());
 extern void rke_term (rke_variables);

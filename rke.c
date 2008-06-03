@@ -17,19 +17,11 @@
    Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-
-
 /* Global declarations, initialization and termination. */
-
 
 #include "rke.h"
 
-
 extern double fabs ();
-extern char *malloc ();
-extern char *alloca ();
-
-
 
 /* Initialize a new system of equations. */
 
@@ -55,8 +47,6 @@ rke_init (number, routine)	/* Newly allocated reentrancy block */
   return var;
 }
 
-
-
 /* Terminate a set of equations. */
 
 void
@@ -68,8 +58,6 @@ rke_term (var)
 
 
 /* Main routine of the module, ODE solver. */
-
-
 
 /* Perform a consistent move of time in the system. */
 

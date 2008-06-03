@@ -20,13 +20,11 @@ CC = gcc
 CFLAGS	= -g
 LDFLAGS	=
 
-
 example: example.o rke.o
 	$(CC) $(LDFLAGS) example.o rke.o -o example -lm
 
 example.o: rke.h example.c
 rke.o: rke.h rke.c
-
 
 clean:
 	rm -f *~ *.o example
