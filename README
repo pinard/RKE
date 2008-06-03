@@ -1,0 +1,212 @@
+=========================================
+README for the Runge-Kutta-England solver
+=========================================
+
+   :Author: François Pinard
+   :Email: pinard@iro.umontreal.ca
+   :Date: 1988-02
+   :Copyright: © 1988 Free Software Foundation, Inc.
+   :Copying: See file COPYING for copying conditions.
+
+.. contents::
+.. sectnum::
+
+.. _`example.c`: /rke/example.c
+.. _`rke.c`: /rke/rke.c
+.. _`rke.h`: /rke/rke.h
+
+To install, put yourself in the "rke" directory and type ``make``.
+To use, link "rke.o" with your program.  File "rke.texinfo" contains
+the documentation in GNU documentation format.  Send any bug reports,
+comments or criticisms to me at mailto:pinard@iro.umontreal.ca.
+
+General presentation
+====================
+
+This section presents briefly the theory of the problem.  It also explains
+the main characteristics of the solver.
+
+The user provides the problem to be solved as a problem function that
+computes the derivatives, given estimates of the independent and all
+dependent variables.  Even if step size adjustment and error control
+are somewhat automatic, the user may tune parameters of this automatic
+behaviour if necessary.
+
+Definition of the problem
+-------------------------
+
+This module approximates a numerical solution to problems that may be
+expressed as systems of ordinary differential equations of the first
+order.  A simple trick may be used to work on higher order systems,
+see the third example in `example.c`_.  Using this module is easy
+and requires no special knowledge, besides the intuitive notion of a
+derivative.
+
+The system to be solved looks like::
+
+     d1(t) = f1(t, v1(t), v2(t), ..., vn(t))
+     d2(t) = f2(t, v1(t), v2(t), ..., vn(t))
+     ...
+     dn(t) = fn(t, v1(t), v2(t), ..., vn(t))
+
+with the special notations::
+
+     d1(t) meaning the value of [d v1(t) / dt] at time t
+     d2(t) meaning the value of [d v2(t) / dt] at time t
+     ...
+     dn(t) meaning the value of [d vn(t) / dt] at time t
+
+and given a consistent initial state::
+
+     t, v1(t), v2(t), ..., vn(t).
+
+By consistent, I mean that the values ``v1, v2, ..., vn`` are all taken
+at the same time ``t``.  Note that even if the variable ``t`` is often
+used to represent the concept of time, this is absolutely artificial and
+this variable ``t`` may be used for anything useful, of course.
+
+The function defining the problem
+---------------------------------
+
+The user should provide a single function which, given ``t`` and an
+array of values for ``v1, v2, ..., vn``, computes ``f1, f2, ..., fn``
+and returns an array of values for the derivatives ``d1, d2, ...,
+dn``.  This function defines the problem to solve.  See examples in
+`example.c`_.
+
+Note that the problem function, as implemented, should not modify
+anything in its argument array of values ``v1, v2, ..., vn``.  It should
+not depend for its computations on any previous result stored into
+its result array ``d1, d2, ..., dn``; this array should be considered
+undefined at the beginning of the problem function.  Be careful: in C,
+arrays are counted from 0, not 1.
+
+Note also that the problem function should normally return a non-zero
+value.  A zero value would indicate that some derivative could not be
+computed and would cause the solver routine to return an error.
+
+The solver routine, and error control
+-------------------------------------
+
+The solver routine will use this problem function in the process of
+estimating other consistent sets of values of the functions ``v1(t),
+v2(t), ..., vn(t)`` for any chosen value of ``t``.  The routine
+receives a consistent set of values and a goal time, it will update
+in place the consistent set of values into another consistent set of
+values, in such a way that the updated ``t`` value will be very near the
+goal time.  The updated t will not necessary equal the goal time, but
+should not be further than half the minimum step size.
+
+The routine implements a variable step size that adjusts automatically
+during the computations, so to limit accumulated errors.  If the estimated
+error for any variable goes over some prescribed limit, the step size is
+shortened and the computation attempted again.  If all the estimated errors
+are comfortably low, the step size is lengthened so to increase the
+efficiency of the computations.  The user supplied function is called 9
+times per successful step and 7 times per rejected step.
+
+The number of steps required augments linearly with the "distance" ``t``
+has to move and linearly with the inverse of the step size.  More steep
+the functions, more steps needed.
+
+There are a minimum and a maximum allowable step sizes, which the user
+may change at any time using the pointer into the reentrency variables.
+The minimum step size should not be zero.  If the minimum or the maximum
+step size is too small, the CPU consumption may increase drastically,
+especially if the module gets desperate, numerical problems may also
+develop due to the limited representation of real numbers.  If the
+minimum step size is too big, the module might declare itself incapable
+of limiting the integration errors of fluctuating functions.  If the
+maximum step size is too big, some sharp phenomenon may go unnoticed by
+the module.
+
+The prescribed maximum error is the sum of a maximum relative error and
+a maximum absolute error, and is represented by the same linear function
+for each of the integration variables.  The slope of the linear function
+tells the maximum relative error per unit of time.  The bias of the
+linear function tells the maximum absolute error per unit of time.  If
+the two coefficients of the linear function are too low, the solver will
+tend to use a lot of CPU.  Those coefficients may be changed at any time
+between two solve calls using the pointer into the reentrancy variables.
+
+Reentrency considerations
+-------------------------
+
+The initialization routine allocates a new block of variables for a
+problem and returns a pointer to the block.  The termination routine
+deallocates the block.  The solver routine receives this pointer and
+any consistent set of values ``t, v1(t), v2(t), ..., vn(t)``.  It is
+possible and even easy to work simultaneously with different systems
+and/or problems, provided that each system keeps for itself the pointer
+to its block of variables and its consistent set of values.
+
+References and history
+----------------------
+
+A reference on Runge-Kutta integration might be:
+
+     Moursund, David G.; Duris, Charles S.: `Elementary Theory and
+     Application of Numerical Analysis`, McGram-Hill, 1967.
+
+The main part of the algorithm has been taken from an appendix in:
+
+     Pritsker, A. Alan B.: `The GASP IV Simulation Language`, Jonh
+     Wiley & Sons, 1974.
+
+I translated it from FORTRAN to Cyber Pascal in 1982, making the module
+usable for a few applications in pure continuous simulation.  In 1988, I
+translated the Pascal module into C, making slight improvements and trying
+to conform to GNU standards.
+
+Routines of the package
+=======================
+
+See the reentrency variables in `rke.h`_.
+
+See the individual routines headers in `rke.c`_.
+
+Some example programs
+=====================
+
+Here is a small collection of examples to the usage of rke, given here to
+supplement the documentation given previously.
+
+The file `example.c`_ contains the exact code to solve each of these.
+
+Integration under a normal curve
+--------------------------------
+
+Simple integration is a particular case of solving ordinary differential
+equations.  Let us compute the probability that a normally distributed
+variable will be no further than one standard deviation from its mean,
+that is, let us integrate::
+
+     exp (-0.5 * x * x) / sqrt (2.0 * pi)
+
+between -1.0 and 1.0.  This is incredibly simple.  Note that the problem
+function does not even use the ``v[0]`` variable.
+
+Rediscovering ``cos`` and ``sin``
+---------------------------------
+
+Let us now seek two functions (``cos`` and ``sin``), the first being the
+derivative of the second, the second being the negative of the derivative
+of the first.  The first function has value 1.0 at point 0.0, the second
+function has value 0.0 at point 0.0.  We want the value of the first
+function at 1.5 (then: ``cos 1.5``).  This is quite simple.  Note that the
+problem function does not even use the ``t`` variable.  Isn't that beautiful
+that such a straight definition is able to sweep a circle?  π is hidden
+somewhere, there...
+
+Box slowing by friction in air
+------------------------------
+
+As an example of ordinary differential equations of level higher than
+one, let have some box of unitary mass moving in the air at speed 100.0,
+to which a friction force is applied, equal to -0.01 times the square of
+the speed.  We want to know the run distance after 5.0 units of time.
+The two functions to solve would be the total distance and the speed,
+for which derivatives would be the speed and the acceleration.  The fact
+that the speed appears in two places link the functions and increase the
+level of the differential equations, and this is the main trick.  Note
+that it is not even required to use ``t`` in the problem function.
