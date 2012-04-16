@@ -1,100 +1,10 @@
-#+TITLE: RKE solver
-#+SETUPFILE: ~/fp/notes/setup/pinard.org
+The Runge-Kutta-England tool is a differential equation solver written
+in C, which I used a few times in continuous simulation contexts.  This
+is a fourth order Runge-Kutta solver combined with an heuristic for
+implementing an adaptative step size.
 
-  [[http://pinard.progiciels-bpi.ca/notes/RKE.html][*link*]] /The Runge-Kutta-England tool is a differential equation solver written in C, which I used a few times in continuous simulation contexts.  This is a fourth order Runge-Kutta solver combined with an heuristic for implementing an adaptative step size./
+The documentation is kept within file RKE.org, but is more nicely read
+by visiting http://pinard.progiciels-bpi.ca/notes/RKE.html with a browser.
 
-* Installation
+François
 
-This is an old project of mine, ported to C in 1988-02.  To install, fetch a copy and call *make*, like this:
-
-#+BEGIN_SRC sh
-git clone git://github.com/pinard/RKE.git
-cd RKE
-make
-#+END_SRC
-
-The reentrency variables are declared in [[https://github.com/pinard/RKE/blob/master/rke.h][rke.h]], and the routines are found within [[https://github.com/pinard/RKE/blob/master/rke.c][rke.c]].  To use, link /rke.o/ with your program, or modify the [[https://github.com/pinard/RKE/blob/master/Makefile][Makefile]] at will.  Send any bug reports, comments or criticisms to me at mailto:pinard@iro.umontreal.ca.
-
-* General presentation
-
-This section presents briefly the theory of the problem.  It also explains the main characteristics of the solver.
-
-The user provides the problem to be solved as a problem function that computes the derivatives, given estimates of the independent and all dependent variables.  Even if step size adjustment and error control are somewhat automatic, the user may tune parameters of this automatic behaviour if necessary.
-
-** Definition of the problem
-
-This module approximates a numerical solution to problems that may be expressed as systems of ordinary differential equations of the first order.  A simple trick may be used to work on higher order systems, see the [[Box%20slowing%20by%20friction%20in%20air][third example]].  Using this module is easy and requires no special knowledge, besides the intuitive notion of a derivative.
-
-The system to be solved looks like:
-
-\[ d_1(t) = {d\over dt}v_1(t) = f_1(t, v_1(t), v_2(t), …, v_n(t)) \]
-\[ d_2(t) = {d\over dt}v_2(t) = f_2(t, v_1(t), v_2(t), …, v_n(t)) \]
-\[ … \]
-\[ d_n(t) = {d\over dt}v_n(t) = f_n(t, v_1(t), v_2(t), …, v_n(t)) \]
-
-The variable $t$ represents time.  $v_k$ are unknown functions over $t$ meant to be discovered, while $f_k$ are already known functions depending on $t$ and all $v_k$ at this time $t$.  $d_k(t)$ is merely a short writing for the value of the derivative of $v_k$ over $t$, taken at time $t$.  Given a consistent initial state $t, v_1(t), v_2(t), …, v_n(t)$, that is, the values $v_1, v_2, …, v_n$ are all taken at the same time $t$, the solver is able compute the value of all $v_k$ functions at any time $t$.
-
-Even if the variable $t$ is often used to represent the concept of time, this is absolutely artificial and this variable $t$ may be used for anything useful, of course.
-
-** The function defining the problem
-
-The user provides a single function which, given $t$ and an array of values for $v_1, v_2, …, v_n$, computes the values of functions $f_1, f_2, …, f_n$ at time $t$, into
-an array of returned values $d_1, d_2, …, d_n$, these values being the derivatives.  This function defines the problem to solve.  See [[Some%20example%20programs][example programs]] below.
-
-The problem function, as implemented, may not modify anything in its argument array of values $v_1, v_2, …, v_n$.  It may not depend for its computations on any previous result stored into its result array $d_1, d_2, …, d_n$; this array is considered undefined at the beginning of the problem function.  Be careful: in C, arrays are counted from 0, not 1.
-
-The problem function normally returns a non-zero value.  A zero value indicates that some derivative could not be computed and causes the solver routine to return an error.
-
-** The solver routine, and error control
-
-The solver routine uses this problem function in the process of estimating other consistent sets of values of the functions $v_1(t), v_2(t), …, v_n(t)$ for any chosen value of $t$.  The routine receives a consistent set of values and a goal time, it updates in place the consistent set of values into another consistent set of values, in such a way that the updated $t$ value is very near the goal time.  The updated $t$ is not necessary equal the goal time, but is not further than half the minimum step size.
-
-The routine implements a variable step size that adjusts automatically during the computations, so to limit accumulated errors.  If the estimated error for any variable goes over some prescribed limit, the step size is shortened and the computation attempted again.  If all the estimated errors are comfortably low, the step size is lengthened so to increase the efficiency of the computations.  The user supplied function is called 9 times per successful step and 7 times per rejected step.
-
-The number of steps required augments linearly with the "distance" $t$ has to move and linearly with the inverse of the step size.  More steep the functions, more steps needed.
-
-There are a minimum and a maximum allowable step sizes, which the user may change at any time using the pointer into the reentrency variables.  The minimum step size may not be zero.  If the minimum or the maximum step size is too small, the CPU consumption may increase drastically, especially if the module gets desperate, numerical problems may also develop due to the limited representation of real numbers.  If the minimum step size is too big, the module might declare itself incapable of limiting the integration errors of fluctuating functions.  If the maximum step size is too big, some sharp phenomenon may go unnoticed by the module.
-
-The prescribed maximum error is the sum of a maximum relative error and a maximum absolute error, and is represented by the same linear function for each of the integration variables.  The slope of the linear function tells the maximum relative error per unit of time.  The bias of the linear function tells the maximum absolute error per unit of time.  If the two coefficients of the linear function are too low, the solver tends to use a lot of CPU.  Those coefficients may be changed at any time between two solve calls using the pointer into the reentrancy variables.
-
-** Reentrency considerations
-
-The initialization routine allocates a new block of variables for a problem and returns a pointer to the block.  The termination routine deallocates the block.  The solver routine receives this pointer and any consistent set of values $t, v_1(t), v_2(t), …, v_n(t)$.  It is possible and even easy to work simultaneously with different systems and/or problems, provided that each system keeps for itself the pointer to its block of variables and its consistent set of values.
-
-** References and history
-
-A reference on Runge-Kutta integration might be:
-
-#+BEGIN_QUOTE
-Moursund, David G.; Duris, Charles S.: /Elementary Theory and Application of Numerical Analysis/, McGram-Hill, 1967.
-#+END_QUOTE
-
-The main part of the algorithm has been taken from an appendix in:
-
-#+BEGIN_QUOTE
-Pritsker, A. Alan B.: /The GASP IV Simulation Language/, Jonh Wiley & Sons, 1974.
-#+END_QUOTE
-
-I translated RKE from FORTRAN to Cyber Pascal in 1982, making it usable for a few applications in pure continuous simulation.  In 1988, I translated the [[http://pinard.progiciels-bpi.ca/bonjour/rke.html][Pascal module]] into C, making slight improvements and trying to conform to GNU standards.  For a while, it has been part of my [[http://fp-etc.progiciels-bpi.ca/index.html][FP etc.]] project, but now has [[https://github.com/pinard/RKE/][its own home]] on GitHub.
-
-* Some example programs
-
-File [[https://github.com/pinard/RKE/blob/master/example.c][example.c]] contains a solution examples for three small problems illustrating the usage of this RKE solver.  These examples are explained below.
-
-** Integration under a normal curve
-
-Simple integration is a particular case of solving ordinary differential equations.  Let us compute the probability that a normally distributed variable gets no further than one standard deviation from its mean, that is, let us integrate \[e^{x^2/2}\over\sqrt{2\pi}\] between $-1$ and $+1$.  This is incredibly simple.  The problem function does not even use the $v$ variable.
-
-** Rediscovering $cos$ and $sin$
-
-Let us now seek two functions ($cos$ and $sin$), the first being the derivative of the second, the second being the negative of the derivative of the first.  The first function has value 1 at point 0, the second function has value 0 at point 0.  We want the value of the first function at 1.5 (we want to know $cos 1.5$).  This is quite simple.  The problem function does not even use the $t$ variable.
-
-I find beautiful that such a straight definition sweeps a circle, and hides π somewhere…
-
-** Box slowing by friction in air
-
-As an example of ordinary differential equations of level higher than one, consider some box of unitary mass moving in the air at speed 100, to which a friction force is applied, equal to $-0.01$ times the square of the speed.  We want to know the run distance after 5 units of time.  The two functions to solve are the total distance and the speed, for which derivatives are the speed and the acceleration.  The fact that the speed appears in two places link the functions and increase the level of the differential equations, and this is the main trick.  It is not even required to use $t$ in the problem function.
-
-# Local Variables:
-# mode: org
-# End:
