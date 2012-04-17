@@ -47,7 +47,7 @@ The problem function normally returns a non-zero value.  A zero value indicates 
 
 ** The solver routine, and error control
 
-The solver routine uses this problem function in the process of estimating other consistent sets of values of the functions $v_1(t), v_2(t), …, v_n(t)$ for any chosen value of $t$.  The routine receives a consistent set of values and a goal time, it updates in place the consistent set of values into another consistent set of values, in such a way that the updated $t$ value is very near the goal time.  The updated $t$ is not necessary equal the goal time, but is not further than half the minimum step size.
+The solver routine uses this problem function in the process of estimating other consistent sets of values of the functions $v_1(t), v_2(t), …, v_n(t)$ for any chosen value of $t$.  The routine receives a consistent set of values and a goal time, it updates in place the consistent set of values into another consistent set of values, in such a way that the updated $t$ value is very near the goal time.  The updated $t$ does not necessary equal the goal time, but is not further than half the minimum step size.
 
 The routine implements a variable step size that adjusts automatically during the computations, so to limit accumulated errors.  If the estimated error for any variable goes over some prescribed limit, the step size is shortened and the computation attempted again.  If all the estimated errors are comfortably low, the step size is lengthened so to increase the efficiency of the computations.  The user supplied function is called 9 times per successful step and 7 times per rejected step.
 
@@ -93,7 +93,7 @@ I find beautiful that such a straight definition sweeps a circle, and hides π s
 
 ** Box slowing by friction in air
 
-As an example of ordinary differential equations of level higher than one, consider some box of unitary mass moving in the air at speed 100, to which a friction force is applied, equal to $-0.01$ times the square of the speed.  We want to know the run distance after 5 units of time.  The two functions to solve are the total distance and the speed, for which derivatives are the speed and the acceleration.  The fact that the speed appears in two places link the functions and increase the level of the differential equations, and this is the main trick.  It is not even required to use $t$ in the problem function.
+As an example of ordinary differential equations of level higher than one, consider some box of unitary mass moving in the air at speed 100, to which a friction force is applied, equal to $-0.01$ times the square of the speed.  We want to know the run distance after 5 units of time.  The two functions to solve are the total distance and the speed, for which derivatives are the speed and the acceleration.  The fact that the speed appears in two places link the functions and increase the level of the differential equations, and this is the main trick.  In the case here, $t$ is not even needed within the problem function.
 
 # Local Variables:
 # mode: org
