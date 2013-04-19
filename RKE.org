@@ -1,11 +1,8 @@
 #+TITLE: RKE solver
-#+SETUPFILE: ~/fp/notes/setup/sciences.org
-#+INCLUDE: ~/fp/notes/setup/jqindex.org
-
+#+INCLUDE: "~/fp/notes/setup/sciences.org"
+- ¸[[https://github.com/pinard/RKE][GitHub]]
 * .                                                           :export:
   /The Runge-Kutta-England tool is a differential equation solver written in C, which I used a few times in continuous simulation contexts.  This is a fourth order Runge-Kutta solver combined with an heuristic for implementing an adaptative step size./
-* _
-- ¸[[https://github.com/pinard/RKE][GitHub]]
 * Installation                                                :export:
 
 This is an old project of mine, ported to C in 1988-02.  To install, fetch a copy and call *make*, like this:
